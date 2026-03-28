@@ -6,11 +6,12 @@
   <title>Fancy Crush</title>
   <style>
     :root {
-      --size: 56px;
-      --gap: 6px;
+      --size: clamp(38px, 10.5vw, 56px);
+      --gap: clamp(4px, 1.1vw, 6px);
       --board-bg: rgba(17, 27, 64, 0.82);
       --tile-bg: #10152e;
       --text: #f4f5ff;
+      --board-pad: clamp(8px, 2vw, 10px);
     }
 
     * { box-sizing: border-box; }
@@ -26,15 +27,15 @@
         radial-gradient(85% 80% at 82% 10%, rgba(213, 118, 255, 0.35) 0%, rgba(213, 118, 255, 0) 72%),
         linear-gradient(165deg, #364fa8 0%, #1d2958 42%, #120f2f 100%);
       color: var(--text);
-      padding: 24px;
+      padding: clamp(10px, 3vw, 24px);
     }
 
     .game {
-      width: min(100%, 560px);
+      width: min(100%, 540px);
       background: rgba(8, 12, 35, 0.72);
       border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 18px;
-      padding: 16px;
+      border-radius: clamp(14px, 3vw, 20px);
+      padding: clamp(12px, 3vw, 18px);
       box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.14);
       backdrop-filter: blur(4px);
     }
@@ -58,6 +59,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-left: auto;
     }
 
     .score {
@@ -92,6 +94,38 @@
       transform: translateY(0) scale(1);
     }
 
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-btn {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      color: #eff2ff;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .menu-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .menu-btn:active {
+      transform: translateY(0);
+    }
+
+    .menu-btn.hidden {
+      display: none;
+    }
+
     .board {
       display: grid;
       grid-template-columns: repeat(8, var(--size));
@@ -101,7 +135,7 @@
       margin-inline: auto;
       background: var(--board-bg);
       border-radius: 16px;
-      padding: 10px;
+      padding: var(--board-pad);
       user-select: none;
       position: relative;
       overflow: hidden;
@@ -124,6 +158,7 @@
       transition: transform 0.16s ease, opacity 0.12s ease, filter 0.16s ease, box-shadow 0.16s ease;
       will-change: transform;
       cursor: grab;
+      touch-action: manipulation;
     }
 
     .tile::after {
@@ -151,6 +186,10 @@
     }
 
     .tile.dragging { opacity: 0.55; }
+    .tile.selected {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 11px 18px rgba(0, 0, 0, 0.3);
+    }
 
     .red    { background: linear-gradient(145deg, #ff5a6b, #d92744); }
     .blue   { background: linear-gradient(145deg, #4ab4ff, #197fd9); }
@@ -162,12 +201,14 @@
     .hint {
       margin-top: 14px;
       text-align: center;
-      font-size: 0.9rem;
+      font-size: clamp(0.78rem, 2.8vw, 0.9rem);
       opacity: 0.85;
     }
 
     .playfield {
       position: relative;
+      display: grid;
+      justify-items: center;
     }
 
     .start-screen {
@@ -220,6 +261,21 @@
       display: none;
     }
 
+    @media (max-width: 560px) {
+      h1 {
+        font-size: 1.05rem;
+      }
+
+      .topbar {
+        margin-bottom: 12px;
+      }
+
+      .score-wrap {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
     .explosion {
       position: absolute;
       width: 14px;
@@ -246,7 +302,10 @@
 <body>
   <main class="game">
     <div class="topbar">
-      <h1>Fancy Crush</h1>
+      <div class="top-actions">
+        <h1>Fancy Crush</h1>
+        <button id="menu-btn" class="menu-btn hidden" type="button">Back to menu</button>
+      </div>
       <div class="score-wrap">
         <div id="combo" class="combo" aria-live="polite"></div>
         <div class="score">Score: <span id="score">0</span></div>
@@ -263,7 +322,7 @@
         </div>
       </div>
     </div>
-    <p class="hint">Drag one tile onto a neighbor to swap.</p>
+    <p class="hint">Drag or tap a tile, then tap a neighbor to swap.</p>
   </main>
 
   <script>
@@ -283,6 +342,7 @@
       const comboEl = document.getElementById("combo");
       const startScreenEl = document.getElementById("start-screen");
       const startBtnEl = document.getElementById("start-btn");
+      const menuBtnEl = document.getElementById("menu-btn");
 
       let nextTileId = 1;
       const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
@@ -292,6 +352,7 @@
       let busy = false;
       let gameStarted = false;
       let comboMessageTimeout;
+      let selectedTile = null;
 
       const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -335,6 +396,7 @@
         score = 0;
         scoreEl.textContent = "0";
         dragged = null;
+        selectedTile = null;
         nextTileId = 1;
         clearTimeout(comboMessageTimeout);
         comboEl.textContent = "";
@@ -398,8 +460,12 @@
       }
 
       function spawnExplosionAt(r, c, color) {
-        const centerX = 10 + c * (56 + 6) + 28;
-        const centerY = 10 + r * (56 + 6) + 28;
+        const css = getComputedStyle(document.documentElement);
+        const tileSize = parseFloat(css.getPropertyValue("--size")) || 56;
+        const gap = parseFloat(css.getPropertyValue("--gap")) || 6;
+        const boardPad = parseFloat(css.getPropertyValue("--board-pad")) || 10;
+        const centerX = boardPad + c * (tileSize + gap) + tileSize / 2;
+        const centerY = boardPad + r * (tileSize + gap) + tileSize / 2;
         const rays = 8;
 
         for (let i = 0; i < rays; i++) {
@@ -476,12 +542,14 @@
               el.addEventListener("dragend", onDragEnd);
               el.addEventListener("dragover", (e) => e.preventDefault());
               el.addEventListener("drop", onDrop);
+              el.addEventListener("click", onTileSelect);
               tileEls.set(tile.id, el);
             }
 
             el.className = `tile ${tile.color}`;
             el.dataset.r = r;
             el.dataset.c = c;
+            el.classList.toggle("selected", selectedTile?.r === r && selectedTile?.c === c);
             usedIds.add(tile.id);
             fragment.appendChild(el);
           }
@@ -583,6 +651,33 @@
         busy = false;
       }
 
+      async function onTileSelect(e) {
+        if (busy || !gameStarted) return;
+
+        const target = {
+          r: Number(e.currentTarget.dataset.r),
+          c: Number(e.currentTarget.dataset.c)
+        };
+
+        if (!selectedTile) {
+          selectedTile = target;
+          render();
+          return;
+        }
+
+        if (selectedTile.r === target.r && selectedTile.c === target.c) {
+          selectedTile = null;
+          render();
+          return;
+        }
+
+        busy = true;
+        await attemptSwap(selectedTile, target);
+        selectedTile = null;
+        busy = false;
+        render();
+      }
+
       async function initGame() {
         resetGameState();
         for (let r = 0; r < SIZE; r++) {
@@ -598,9 +693,20 @@
         if (busy) return;
         busy = true;
         gameStarted = true;
+        menuBtnEl.classList.remove("hidden");
         startScreenEl.classList.add("hidden");
         await initGame();
         busy = false;
+      });
+
+      menuBtnEl.addEventListener("click", () => {
+        if (busy) return;
+        gameStarted = false;
+        selectedTile = null;
+        menuBtnEl.classList.add("hidden");
+        resetGameState();
+        boardEl.replaceChildren();
+        startScreenEl.classList.remove("hidden");
       });
     })();
   </script>
