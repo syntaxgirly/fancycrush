@@ -206,6 +206,16 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -14px 28px rgba(0,0,0,0.3), 0 18px 30px rgba(11,16,48,0.38);
       background-image: radial-gradient(circle at 50% -20%, rgba(255,255,255,0.2), rgba(255,255,255,0) 58%);
+      transition: filter 240ms ease, transform 240ms ease;
+    }
+
+    .board.resolving {
+      filter: saturate(1.08) brightness(1.03);
+      transform: scale(1.004);
+    }
+
+    .board.big-match-shake {
+      animation: board-shake 380ms cubic-bezier(0.22, 0.7, 0.3, 1);
     }
 
     .tile {
@@ -286,6 +296,18 @@
     .tile.matching {
       animation: match-bounce 300ms cubic-bezier(0.22, 1.1, 0.32, 1) 1;
       z-index: 4;
+    }
+
+    .tile.match-glow {
+      box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.75),
+        0 0 24px rgba(255, 255, 255, 0.55),
+        0 0 34px var(--glow-color, rgba(255, 255, 255, 0.68)),
+        0 10px 14px rgba(0, 0, 0, 0.26),
+        0 4px 0 rgba(255, 255, 255, 0.22) inset,
+        0 -10px 12px rgba(0, 0, 0, 0.25) inset;
+      filter: saturate(1.2) brightness(1.12);
+      transition: box-shadow 180ms ease, filter 180ms ease;
     }
 
     .red    { background: radial-gradient(circle at 30% 24%, #ffafbf 0%, #ff6b85 32%, #eb2d58 68%, #b9153d 100%); }
@@ -440,6 +462,15 @@
       64% { transform: scale(0.95); filter: brightness(1.08); }
       100% { transform: scale(1); filter: brightness(1); }
     }
+
+    @keyframes board-shake {
+      0% { transform: translateX(0); }
+      18% { transform: translateX(-5px) rotate(-0.3deg); }
+      36% { transform: translateX(4px) rotate(0.28deg); }
+      54% { transform: translateX(-4px) rotate(-0.2deg); }
+      72% { transform: translateX(3px) rotate(0.15deg); }
+      100% { transform: translateX(0); }
+    }
   </style>
 </head>
 <body>
@@ -480,6 +511,7 @@
       const MOVE_ANIM_MIN = 240;
       const MOVE_ANIM_MAX = 520;
       const MOVE_ANIM_PER_PIXEL = 2.6;
+      const BIG_MATCH_THRESHOLD = 5;
       const boardEl = document.getElementById("board");
       const scoreEl = document.getElementById("score");
       const comboEl = document.getElementById("combo");
@@ -626,6 +658,13 @@
         }
       }
 
+      function triggerBigMatchFeedback(matchCount) {
+        if (matchCount < BIG_MATCH_THRESHOLD) return;
+        boardEl.classList.remove("big-match-shake");
+        void boardEl.offsetWidth;
+        boardEl.classList.add("big-match-shake");
+      }
+
       function removeMatches(matched, chain = 0) {
         for (const key of matched) {
           const [r, c] = key.split(",").map(Number);
@@ -763,10 +802,15 @@
           if (!tile) continue;
           const el = tileEls.get(tile.id);
           if (!el) continue;
+          const glowColor = getComputedStyle(el).backgroundColor || "rgba(255,255,255,0.8)";
+          el.style.setProperty("--glow-color", glowColor);
+          el.classList.add("match-glow");
           el.classList.add("matching");
           const finished = el.getAnimations().map((anim) => anim.finished.catch(() => null));
           const settle = Promise.allSettled(finished).then(() => {
             el.classList.remove("matching");
+            el.classList.remove("match-glow");
+            el.style.removeProperty("--glow-color");
           });
           animations.push(settle);
         }
@@ -778,6 +822,8 @@
         let matched = findMatches();
 
         while (matched.size > 0) {
+          boardEl.classList.add("resolving");
+          triggerBigMatchFeedback(matched.size);
           await animateMatch(matched);
           removeMatches(matched, chain);
           render();
@@ -788,6 +834,7 @@
           matched = findMatches();
           chain += 1;
         }
+        boardEl.classList.remove("resolving");
       }
 
       async function attemptSwap(from, to) {
