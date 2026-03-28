@@ -166,6 +166,60 @@
       opacity: 0.85;
     }
 
+    .playfield {
+      position: relative;
+    }
+
+    .start-screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 20px;
+      border-radius: 16px;
+      z-index: 5;
+      background: linear-gradient(165deg, rgba(15, 22, 59, 0.92), rgba(14, 12, 35, 0.94));
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .start-screen h2 {
+      margin: 0 0 8px;
+      font-size: 1.3rem;
+    }
+
+    .start-screen p {
+      margin: 0 0 16px;
+      opacity: 0.9;
+    }
+
+    .start-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #20182b;
+      cursor: pointer;
+      background: linear-gradient(145deg, #ffe56a, #ffb932);
+      box-shadow: 0 8px 22px rgba(255, 185, 50, 0.4);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .start-btn:active {
+      transform: translateY(0);
+    }
+
+    .start-screen.hidden {
+      display: none;
+    }
+
     .explosion {
       position: absolute;
       width: 14px;
@@ -199,7 +253,16 @@
       </div>
     </div>
 
-    <div id="board" class="board" aria-label="Candy board"></div>
+    <div class="playfield">
+      <div id="board" class="board" aria-label="Candy board"></div>
+      <div id="start-screen" class="start-screen">
+        <div>
+          <h2>Ready to play?</h2>
+          <p>Press start to begin.</p>
+          <button id="start-btn" class="start-btn" type="button">Start Game</button>
+        </div>
+      </div>
+    </div>
     <p class="hint">Drag one tile onto a neighbor to swap.</p>
   </main>
 
@@ -212,6 +275,8 @@
       const boardEl = document.getElementById("board");
       const scoreEl = document.getElementById("score");
       const comboEl = document.getElementById("combo");
+      const startScreenEl = document.getElementById("start-screen");
+      const startBtnEl = document.getElementById("start-btn");
 
       let nextTileId = 1;
       const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
@@ -219,6 +284,7 @@
       let score = 0;
       let dragged = null;
       let busy = false;
+      let gameStarted = false;
       let comboMessageTimeout;
 
       const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -228,6 +294,22 @@
       function updateScore(points) {
         score += points;
         scoreEl.textContent = score;
+      }
+
+      function resetGameState() {
+        score = 0;
+        scoreEl.textContent = "0";
+        dragged = null;
+        nextTileId = 1;
+        clearTimeout(comboMessageTimeout);
+        comboEl.textContent = "";
+        comboEl.classList.remove("show");
+        tileEls.clear();
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            board[r][c] = null;
+          }
+        }
       }
 
       function showCombo(chain, bonus) {
@@ -433,7 +515,7 @@
       }
 
       function onDragStart(e) {
-        if (busy) {
+        if (busy || !gameStarted) {
           e.preventDefault();
           return;
         }
@@ -463,7 +545,8 @@
         busy = false;
       }
 
-      async function init() {
+      async function initGame() {
+        resetGameState();
         for (let r = 0; r < SIZE; r++) {
           for (let c = 0; c < SIZE; c++) {
             board[r][c] = createTile();
@@ -474,7 +557,14 @@
         await resolveBoard();
       }
 
-      init();
+      startBtnEl.addEventListener("click", async () => {
+        if (busy) return;
+        busy = true;
+        gameStarted = true;
+        startScreenEl.classList.add("hidden");
+        await initGame();
+        busy = false;
+      });
     })();
   </script>
 </body>
