@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fancy Crush</title>
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
     :root {
       --size: clamp(38px, 10.5vw, 56px);
       --gap: clamp(4px, 1.1vw, 6px);
-      --board-bg: rgba(25, 35, 82, 0.82);
+      --board-bg: rgba(27, 38, 92, 0.74);
       --tile-bg: #10152e;
       --tile-radius: clamp(12px, 3.2vw, 18px);
-      --text: #f4f5ff;
-      --board-pad: clamp(8px, 2vw, 10px);
-      --surface-glass: rgba(12, 18, 51, 0.72);
+      --text: #f7f8ff;
+      --board-pad: clamp(9px, 2.2vw, 12px);
+      --surface-glass: rgba(15, 21, 60, 0.68);
       --accent-cyan: #69ddff;
       --accent-pink: #ff6ecf;
+      --card-gap: clamp(14px, 3vw, 22px);
     }
 
     * { box-sizing: border-box; }
@@ -25,30 +28,32 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: "Plus Jakarta Sans", Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       background:
-        radial-gradient(70% 90% at 18% 14%, rgba(128, 168, 255, 0.45) 0%, rgba(128, 168, 255, 0) 70%),
-        radial-gradient(85% 80% at 82% 10%, rgba(213, 118, 255, 0.35) 0%, rgba(213, 118, 255, 0) 72%),
-        linear-gradient(165deg, #364fa8 0%, #1d2958 42%, #120f2f 100%);
+        radial-gradient(95% 110% at 15% 12%, rgba(188, 216, 255, 0.52) 0%, rgba(188, 216, 255, 0) 62%),
+        radial-gradient(90% 95% at 85% 8%, rgba(243, 196, 255, 0.44) 0%, rgba(243, 196, 255, 0) 66%),
+        linear-gradient(175deg, #a5b9ff 0%, #7f9bf3 24%, #4d69d5 55%, #2f3b8f 100%);
       color: var(--text);
-      padding: clamp(10px, 3vw, 24px);
+      padding: clamp(12px, 4vw, 30px);
     }
 
     .game {
-      width: min(100%, 540px);
+      width: min(100%, 560px);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 28%),
         var(--surface-glass);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: clamp(14px, 3vw, 20px);
-      padding: clamp(12px, 3vw, 18px);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: clamp(18px, 4vw, 26px);
+      padding: clamp(14px, 4vw, 24px);
       box-shadow:
-        0 18px 42px rgba(0, 0, 0, 0.44),
+        0 18px 48px rgba(30, 41, 101, 0.44),
         0 0 0 1px rgba(255, 255, 255, 0.04) inset,
         inset 0 1px 0 rgba(255, 255, 255, 0.16);
-      backdrop-filter: blur(8px) saturate(120%);
+      backdrop-filter: blur(10px) saturate(125%);
       position: relative;
       overflow: hidden;
+      display: grid;
+      gap: var(--card-gap);
     }
 
     .game::before {
@@ -64,32 +69,35 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
-      gap: 12px;
+      gap: 14px;
       flex-wrap: wrap;
     }
 
     h1 {
       margin: 0;
-      font-size: 1.2rem;
-      letter-spacing: 0.2px;
+      font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
+      font-size: clamp(1.2rem, 4vw, 1.56rem);
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      line-height: 1;
+      text-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     }
 
     .score-wrap {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       margin-left: auto;
     }
 
     .score {
-      background: rgba(255, 255, 255, 0.12);
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.1));
       border-radius: 999px;
-      padding: 8px 12px;
+      padding: 9px 14px;
       font-weight: 700;
-      font-size: 0.95rem;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 20px rgba(16, 21, 58, 0.28);
     }
 
     .combo {
@@ -118,7 +126,7 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .menu-btn {
@@ -126,9 +134,9 @@
       border-radius: 999px;
       color: #eff2ff;
       background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
-      padding: 8px 12px;
+      padding: 9px 13px;
       font-weight: 700;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       letter-spacing: 0.2px;
       cursor: pointer;
       transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
@@ -157,13 +165,13 @@
       width: max-content;
       margin-inline: auto;
       background: var(--board-bg);
-      border-radius: 22px;
+      border-radius: 24px;
       padding: var(--board-pad);
       user-select: none;
       position: relative;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -14px 28px rgba(0,0,0,0.3), 0 16px 26px rgba(0,0,0,0.25);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -14px 28px rgba(0,0,0,0.3), 0 18px 30px rgba(11,16,48,0.38);
       background-image: radial-gradient(circle at 50% -20%, rgba(255,255,255,0.2), rgba(255,255,255,0) 58%);
     }
 
@@ -254,16 +262,26 @@
     .orange { background: radial-gradient(circle at 30% 24%, #ffe2bc 0%, #ffc37d 34%, #ff9342 70%, #dc5d14 100%); }
 
     .hint {
-      margin-top: 14px;
       text-align: center;
       font-size: clamp(0.78rem, 2.8vw, 0.9rem);
-      opacity: 0.85;
+      opacity: 0.96;
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: linear-gradient(130deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.08));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 18px rgba(17, 24, 66, 0.2);
     }
 
     .playfield {
       position: relative;
       display: grid;
       justify-items: center;
+      padding: clamp(10px, 2.8vw, 14px);
+      border-radius: 24px;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
     .start-screen {
@@ -322,12 +340,16 @@
       }
 
       .topbar {
-        margin-bottom: 12px;
+        gap: 12px;
       }
 
       .score-wrap {
         width: 100%;
         justify-content: space-between;
+      }
+
+      .playfield {
+        padding: 9px;
       }
     }
 
