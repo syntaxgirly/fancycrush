@@ -8,7 +8,7 @@
     :root {
       --size: 56px;
       --gap: 6px;
-      --board-bg: #222a4f;
+      --board-bg: rgba(17, 27, 64, 0.82);
       --tile-bg: #10152e;
       --text: #f4f5ff;
     }
@@ -21,18 +21,22 @@
       display: grid;
       place-items: center;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: radial-gradient(circle at top, #3a4a98 0%, #1f254f 45%, #121635 100%);
+      background:
+        radial-gradient(70% 90% at 18% 14%, rgba(128, 168, 255, 0.45) 0%, rgba(128, 168, 255, 0) 70%),
+        radial-gradient(85% 80% at 82% 10%, rgba(213, 118, 255, 0.35) 0%, rgba(213, 118, 255, 0) 72%),
+        linear-gradient(165deg, #364fa8 0%, #1d2958 42%, #120f2f 100%);
       color: var(--text);
       padding: 24px;
     }
 
     .game {
       width: min(100%, 560px);
-      background: rgba(8, 12, 35, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 16px;
+      background: rgba(8, 12, 35, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 18px;
       padding: 16px;
-      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(4px);
     }
 
     .topbar {
@@ -50,12 +54,42 @@
       letter-spacing: 0.2px;
     }
 
+    .score-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .score {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 999px;
       padding: 8px 12px;
       font-weight: 700;
       font-size: 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .combo {
+      min-width: 92px;
+      text-align: center;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      border-radius: 999px;
+      color: #fff8ef;
+      background: linear-gradient(135deg, rgba(255, 185, 102, 0.9), rgba(236, 111, 47, 0.9));
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 8px 20px rgba(236, 111, 47, 0.3);
+      opacity: 0;
+      transform: translateY(-4px) scale(0.94);
+      transition: opacity 170ms ease, transform 170ms ease;
+      pointer-events: none;
+    }
+
+    .combo.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
 
     .board {
@@ -66,26 +100,56 @@
       width: max-content;
       margin-inline: auto;
       background: var(--board-bg);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 10px;
       user-select: none;
       position: relative;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -10px 24px rgba(0,0,0,0.22);
     }
 
     .tile {
+      position: relative;
       width: var(--size);
       height: var(--size);
-      border-radius: 14px;
-      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.28);
       background: var(--tile-bg);
-      box-shadow: inset 0 6px 10px rgba(255, 255, 255, 0.12),
-                  inset 0 -8px 12px rgba(0, 0, 0, 0.18);
-      transition: transform 0.12s ease, opacity 0.12s ease;
+      overflow: hidden;
+      box-shadow:
+        0 7px 10px rgba(0, 0, 0, 0.22),
+        inset 0 7px 10px rgba(255, 255, 255, 0.2),
+        inset 0 -9px 10px rgba(0, 0, 0, 0.22);
+      transition: transform 0.16s ease, opacity 0.12s ease, filter 0.16s ease, box-shadow 0.16s ease;
       will-change: transform;
+      cursor: grab;
     }
 
-    .tile:active { transform: scale(0.94); }
+    .tile::after {
+      content: "";
+      position: absolute;
+      inset: 5px 8px auto;
+      height: 34%;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+
+    .tile:hover {
+      transform: translateY(-2px) scale(1.035);
+      filter: saturate(1.08) brightness(1.05);
+      box-shadow:
+        0 11px 18px rgba(0, 0, 0, 0.3),
+        inset 0 7px 10px rgba(255, 255, 255, 0.24),
+        inset 0 -10px 12px rgba(0, 0, 0, 0.22);
+    }
+
+    .tile:active {
+      transform: scale(0.94);
+      cursor: grabbing;
+    }
+
     .tile.dragging { opacity: 0.55; }
 
     .red    { background: linear-gradient(145deg, #ff5a6b, #d92744); }
@@ -129,7 +193,10 @@
   <main class="game">
     <div class="topbar">
       <h1>Fancy Crush</h1>
-      <div class="score">Score: <span id="score">0</span></div>
+      <div class="score-wrap">
+        <div id="combo" class="combo" aria-live="polite"></div>
+        <div class="score">Score: <span id="score">0</span></div>
+      </div>
     </div>
 
     <div id="board" class="board" aria-label="Candy board"></div>
@@ -141,8 +208,10 @@
       const SIZE = 8;
       const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
       const MATCH_POINTS = 10;
+      const CHAIN_MULTIPLIER = 1.35;
       const boardEl = document.getElementById("board");
       const scoreEl = document.getElementById("score");
+      const comboEl = document.getElementById("combo");
 
       let nextTileId = 1;
       const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
@@ -150,6 +219,7 @@
       let score = 0;
       let dragged = null;
       let busy = false;
+      let comboMessageTimeout;
 
       const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -158,6 +228,14 @@
       function updateScore(points) {
         score += points;
         scoreEl.textContent = score;
+      }
+
+      function showCombo(chain, bonus) {
+        if (chain <= 0) return;
+        comboEl.textContent = `${chain + 1}x COMBO +${bonus}`;
+        comboEl.classList.add("show");
+        clearTimeout(comboMessageTimeout);
+        comboMessageTimeout = setTimeout(() => comboEl.classList.remove("show"), 750);
       }
 
       function isAdjacent(a, b) {
@@ -237,7 +315,10 @@
         }
 
         if (matched.size > 0) {
-          updateScore(matched.size * MATCH_POINTS * (chain + 1));
+          const basePoints = matched.size * MATCH_POINTS;
+          const chainBonus = Math.round(basePoints * chain * CHAIN_MULTIPLIER);
+          updateScore(basePoints + chainBonus);
+          showCombo(chain, chainBonus);
         }
       }
 
@@ -305,12 +386,14 @@
           const dx = oldRect.left - newRect.left;
           const dy = oldRect.top - newRect.top;
           if (dx !== 0 || dy !== 0) {
+            const distance = Math.hypot(dx, dy);
+            const duration = Math.max(150, Math.min(360, Math.round(distance * 1.7)));
             el.animate(
               [
                 { transform: `translate(${dx}px, ${dy}px)` },
                 { transform: "translate(0, 0)" }
               ],
-              { duration: 170, easing: "ease-out" }
+              { duration, easing: "cubic-bezier(0.18, 0.82, 0.27, 1)" }
             );
           }
         }
@@ -326,7 +409,7 @@
           await wait(180);
           collapseColumns();
           render();
-          await wait(180);
+          await wait(200);
           matched = findMatches();
           chain += 1;
         }
