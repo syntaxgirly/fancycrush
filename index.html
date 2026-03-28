@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Candy Crush</title>
+  <title>Fancy Crush</title>
   <style>
     :root {
       --size: 56px;
@@ -69,6 +69,8 @@
       border-radius: 14px;
       padding: 10px;
       user-select: none;
+      position: relative;
+      overflow: hidden;
     }
 
     .tile {
@@ -80,6 +82,7 @@
       box-shadow: inset 0 6px 10px rgba(255, 255, 255, 0.12),
                   inset 0 -8px 12px rgba(0, 0, 0, 0.18);
       transition: transform 0.12s ease, opacity 0.12s ease;
+      will-change: transform;
     }
 
     .tile:active { transform: scale(0.94); }
@@ -98,12 +101,34 @@
       font-size: 0.9rem;
       opacity: 0.85;
     }
+
+    .explosion {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0) 70%);
+      animation: burst 340ms ease-out forwards;
+      mix-blend-mode: screen;
+    }
+
+    @keyframes burst {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.2);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(1.8);
+      }
+    }
   </style>
 </head>
 <body>
   <main class="game">
     <div class="topbar">
-      <h1>Mini Candy Crush</h1>
+      <h1>Fancy Crush</h1>
       <div class="score">Score: <span id="score">0</span></div>
     </div>
 
@@ -115,21 +140,26 @@
     (() => {
       const SIZE = 8;
       const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
+      const MATCH_POINTS = 10;
       const boardEl = document.getElementById("board");
       const scoreEl = document.getElementById("score");
 
+      let nextTileId = 1;
       const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+      const tileEls = new Map();
       let score = 0;
       let dragged = null;
       let busy = false;
 
       const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const createTile = () => ({ id: nextTileId++, color: randomColor() });
 
       function updateScore(points) {
         score += points;
         scoreEl.textContent = score;
       }
+
       function isAdjacent(a, b) {
         return Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
       }
@@ -141,11 +171,10 @@
       function findMatches() {
         const matched = new Set();
 
-        // Horizontal runs
         for (let r = 0; r < SIZE; r++) {
           let runStart = 0;
           for (let c = 1; c <= SIZE; c++) {
-            const same = c < SIZE && board[r][c] && board[r][c] === board[r][runStart];
+            const same = c < SIZE && board[r][c] && board[r][c].color === board[r][runStart].color;
             if (!same) {
               const runLen = c - runStart;
               if (board[r][runStart] && runLen >= 3) {
@@ -156,11 +185,10 @@
           }
         }
 
-        // Vertical runs
         for (let c = 0; c < SIZE; c++) {
           let runStart = 0;
           for (let r = 1; r <= SIZE; r++) {
-            const same = r < SIZE && board[r][c] && board[r][c] === board[runStart][c];
+            const same = r < SIZE && board[r][c] && board[r][c].color === board[runStart][c].color;
             if (!same) {
               const runLen = r - runStart;
               if (board[runStart][c] && runLen >= 3) {
@@ -174,12 +202,43 @@
         return matched;
       }
 
-      function removeMatches(matched) {
+      function spawnExplosionAt(r, c, color) {
+        const centerX = 10 + c * (56 + 6) + 28;
+        const centerY = 10 + r * (56 + 6) + 28;
+        const rays = 8;
+
+        for (let i = 0; i < rays; i++) {
+          const spark = document.createElement("span");
+          const angle = (Math.PI * 2 * i) / rays;
+          const distance = 8 + Math.random() * 24;
+          spark.className = "explosion";
+          spark.style.left = `${centerX}px`;
+          spark.style.top = `${centerY}px`;
+          spark.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+          spark.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+          spark.style.background = `radial-gradient(circle at center, rgba(255,255,255,0.95), ${color}, rgba(255,255,255,0))`;
+          spark.addEventListener("animationend", () => spark.remove());
+          boardEl.appendChild(spark);
+        }
+      }
+
+      function removeMatches(matched, chain = 0) {
         for (const key of matched) {
           const [r, c] = key.split(",").map(Number);
+          const tile = board[r][c];
+          if (!tile) continue;
+          const el = tileEls.get(tile.id);
+          if (el) {
+            const computed = getComputedStyle(el).backgroundColor || "rgba(255,255,255,0.8)";
+            spawnExplosionAt(r, c, computed);
+          }
+          tileEls.delete(tile.id);
           board[r][c] = null;
         }
-        if (matched.size > 0) updateScore(matched.size * 10);
+
+        if (matched.size > 0) {
+          updateScore(matched.size * MATCH_POINTS * (chain + 1));
+        }
       }
 
       function collapseColumns() {
@@ -190,43 +249,86 @@
           }
 
           for (let r = SIZE - 1, i = 0; r >= 0; r--, i++) {
-            board[r][c] = i < nonNull.length ? nonNull[i] : randomColor();
+            board[r][c] = i < nonNull.length ? nonNull[i] : createTile();
           }
         }
       }
 
       function render() {
-        boardEl.innerHTML = "";
+        const previousRects = new Map();
+
+        for (const [id, el] of tileEls.entries()) {
+          previousRects.set(id, el.getBoundingClientRect());
+        }
+
+        const usedIds = new Set();
+        const fragment = document.createDocumentFragment();
 
         for (let r = 0; r < SIZE; r++) {
           for (let c = 0; c < SIZE; c++) {
-            const tile = document.createElement("div");
-            tile.className = `tile ${board[r][c]}`;
-            tile.draggable = true;
-            tile.dataset.r = r;
-            tile.dataset.c = c;
+            const tile = board[r][c];
+            if (!tile) continue;
 
-            tile.addEventListener("dragstart", onDragStart);
-            tile.addEventListener("dragend", onDragEnd);
-            tile.addEventListener("dragover", (e) => e.preventDefault());
-            tile.addEventListener("drop", onDrop);
+            let el = tileEls.get(tile.id);
+            if (!el) {
+              el = document.createElement("div");
+              el.className = "tile";
+              el.draggable = true;
+              el.addEventListener("dragstart", onDragStart);
+              el.addEventListener("dragend", onDragEnd);
+              el.addEventListener("dragover", (e) => e.preventDefault());
+              el.addEventListener("drop", onDrop);
+              tileEls.set(tile.id, el);
+            }
 
-            boardEl.appendChild(tile);
+            el.className = `tile ${tile.color}`;
+            el.dataset.r = r;
+            el.dataset.c = c;
+            usedIds.add(tile.id);
+            fragment.appendChild(el);
+          }
+        }
+
+        for (const [id, el] of tileEls.entries()) {
+          if (!usedIds.has(id)) {
+            el.remove();
+            tileEls.delete(id);
+          }
+        }
+
+        boardEl.replaceChildren(fragment, ...boardEl.querySelectorAll('.explosion'));
+
+        for (const [id, el] of tileEls.entries()) {
+          const oldRect = previousRects.get(id);
+          if (!oldRect) continue;
+          const newRect = el.getBoundingClientRect();
+          const dx = oldRect.left - newRect.left;
+          const dy = oldRect.top - newRect.top;
+          if (dx !== 0 || dy !== 0) {
+            el.animate(
+              [
+                { transform: `translate(${dx}px, ${dy}px)` },
+                { transform: "translate(0, 0)" }
+              ],
+              { duration: 170, easing: "ease-out" }
+            );
           }
         }
       }
 
       async function resolveBoard() {
+        let chain = 0;
         let matched = findMatches();
 
         while (matched.size > 0) {
-          removeMatches(matched);
+          removeMatches(matched, chain);
           render();
-          await wait(120);
+          await wait(180);
           collapseColumns();
           render();
-          await wait(120);
+          await wait(180);
           matched = findMatches();
+          chain += 1;
         }
       }
 
@@ -238,7 +340,7 @@
 
         const matched = findMatches();
         if (matched.size === 0) {
-          await wait(110);
+          await wait(170);
           swap(from, to);
           render();
           return;
@@ -281,12 +383,12 @@
       async function init() {
         for (let r = 0; r < SIZE; r++) {
           for (let c = 0; c < SIZE; c++) {
-            board[r][c] = randomColor();
+            board[r][c] = createTile();
           }
         }
 
         render();
-        await resolveBoard(); // remove accidental starting matches
+        await resolveBoard();
       }
 
       init();
