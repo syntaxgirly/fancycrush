@@ -290,6 +290,35 @@
       const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const createTile = () => ({ id: nextTileId++, color: randomColor() });
+      const createSafeTile = (r, c) => {
+        const availableColors = [...COLORS];
+
+        for (let i = availableColors.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [availableColors[i], availableColors[j]] = [availableColors[j], availableColors[i]];
+        }
+
+        for (const color of availableColors) {
+          const createsHorizontalMatch =
+            c >= 2 &&
+            board[r][c - 1] &&
+            board[r][c - 2] &&
+            board[r][c - 1].color === color &&
+            board[r][c - 2].color === color;
+          const createsVerticalMatch =
+            r >= 2 &&
+            board[r - 1][c] &&
+            board[r - 2][c] &&
+            board[r - 1][c].color === color &&
+            board[r - 2][c].color === color;
+
+          if (!createsHorizontalMatch && !createsVerticalMatch) {
+            return { id: nextTileId++, color };
+          }
+        }
+
+        return createTile();
+      };
 
       function updateScore(points) {
         score += points;
@@ -549,12 +578,11 @@
         resetGameState();
         for (let r = 0; r < SIZE; r++) {
           for (let c = 0; c < SIZE; c++) {
-            board[r][c] = createTile();
+            board[r][c] = createSafeTile(r, c);
           }
         }
 
         render();
-        await resolveBoard();
       }
 
       startBtnEl.addEventListener("click", async () => {
