@@ -237,7 +237,11 @@
         0 -9px 12px rgba(16, 7, 36, 0.24) inset,
         0 0 0 1px rgba(255, 255, 255, 0.08) inset,
         0 1px 0 rgba(255, 255, 255, 0.1);
-      transition: transform 0.2s ease, opacity 0.14s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 180ms ease-out,
+        filter 180ms ease-out,
+        box-shadow 180ms ease-out;
       will-change: transform, filter;
       cursor: grab;
       touch-action: manipulation;
@@ -279,7 +283,7 @@
     }
 
     .tile:hover {
-      transform: translateY(-3px) scale(1.045);
+      transform: translateY(-2px) scale(1.03);
       filter: saturate(1.08) brightness(1.03);
       box-shadow:
         0 14px 20px rgba(6, 10, 30, 0.34),
@@ -294,8 +298,8 @@
     }
 
     .tile:active {
-      transform: scale(0.92);
-      filter: saturate(1.2);
+      transform: scale(0.95);
+      filter: saturate(1.12);
       cursor: grabbing;
     }
 
@@ -310,7 +314,7 @@
     }
 
     .tile.matching {
-      animation: match-bounce 300ms cubic-bezier(0.22, 1.1, 0.32, 1) 1;
+      animation: match-pop 190ms cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
       z-index: 4;
     }
 
@@ -502,12 +506,10 @@
       }
     }
 
-    @keyframes match-bounce {
-      0% { transform: scale(1); filter: brightness(1); }
-      26% { transform: scale(1.26); filter: brightness(1.24); }
-      64% { transform: scale(0.84); filter: brightness(1.08); }
-      86% { transform: scale(1.08); filter: brightness(1.12); }
-      100% { transform: scale(0); filter: brightness(1); opacity: 0.2; }
+    @keyframes match-pop {
+      0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+      52% { transform: scale(1.14); opacity: 0.95; filter: brightness(1.16); }
+      100% { transform: scale(0.82); opacity: 0; filter: brightness(1.04); }
     }
 
     @keyframes swap-bounce {
@@ -559,12 +561,12 @@
       const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
       const MATCH_POINTS = 10;
       const CHAIN_MULTIPLIER = 1.35;
-      const SWAP_REVERT_DELAY = 240;
-      const REMOVE_PAUSE = 300;
-      const COLLAPSE_PAUSE = 320;
-      const MOVE_ANIM_MIN = 240;
-      const MOVE_ANIM_MAX = 520;
-      const MOVE_ANIM_PER_PIXEL = 2.6;
+      const SWAP_REVERT_DELAY = 170;
+      const REMOVE_PAUSE = 170;
+      const COLLAPSE_PAUSE = 190;
+      const MOVE_ANIM_MIN = 150;
+      const MOVE_ANIM_MAX = 240;
+      const MOVE_ANIM_PER_PIXEL = 0.9;
       const BIG_MATCH_THRESHOLD = 5;
       const boardEl = document.getElementById("board");
       const scoreEl = document.getElementById("score");
@@ -817,6 +819,7 @@
           let dx = 0;
           let dy = 0;
 
+          let isSpawn = false;
           if (oldRect) {
             dx = oldRect.left - newRect.left;
             dy = oldRect.top - newRect.top;
@@ -825,6 +828,7 @@
             const tileSize = parseFloat(css.getPropertyValue("--size")) || 56;
             const gap = parseFloat(css.getPropertyValue("--gap")) || 6;
             dy = -(tileSize + gap) * tile.spawnOffset;
+            isSpawn = true;
           }
 
           if (dx !== 0 || dy !== 0) {
@@ -833,17 +837,16 @@
               MOVE_ANIM_MIN,
               Math.min(MOVE_ANIM_MAX, Math.round(distance * MOVE_ANIM_PER_PIXEL))
             );
-            el.style.setProperty("--from-x", `${dx}px`);
-            el.style.setProperty("--from-y", `${dy}px`);
-            el.animate(
-              [
-                { transform: `translate(${dx}px, ${dy}px) scale(0.92)` },
-                { transform: "translate(0, 0) scale(1.12)", offset: 0.58 },
-                { transform: "translate(0, 0) scale(0.96)", offset: 0.78 },
-                { transform: "translate(0, 0) scale(1)" }
-              ],
-              { duration, easing: "cubic-bezier(0.25, 0.88, 0.24, 1.08)" }
-            );
+            const keyframes = isSpawn
+              ? [
+                  { transform: `translate3d(${dx}px, ${dy}px, 0) scale(0.94)`, opacity: 0.72 },
+                  { transform: "translate3d(0, 0, 0) scale(1)", opacity: 1 }
+                ]
+              : [
+                  { transform: `translate3d(${dx}px, ${dy}px, 0)` },
+                  { transform: "translate3d(0, 0, 0)" }
+                ];
+            el.animate(keyframes, { duration, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
           }
 
           if (tile && tile.spawnOffset !== undefined) {
