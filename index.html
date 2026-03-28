@@ -12,7 +12,7 @@
       --gap: clamp(4px, 1.1vw, 6px);
       --board-bg: rgba(27, 38, 92, 0.74);
       --tile-bg: #10152e;
-      --tile-radius: clamp(12px, 3.2vw, 18px);
+      --tile-radius: clamp(14px, 3.5vw, 20px);
       --text: #f7f8ff;
       --board-pad: clamp(9px, 2.2vw, 12px);
       --surface-glass: rgba(15, 21, 60, 0.68);
@@ -223,14 +223,18 @@
       width: 100%;
       height: 100%;
       aspect-ratio: 1 / 1;
-      border-radius: var(--tile-radius);
-      border: 1px solid rgba(255, 255, 255, 0.36);
-      background: var(--tile-bg);
+      border-radius: 36% 38% 40% 35% / 34% 35% 45% 42%;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      background:
+        radial-gradient(circle at 26% 18%, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.35) 18%, rgba(255, 255, 255, 0) 48%),
+        radial-gradient(140% 120% at 24% 18%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 56%),
+        var(--tile-bg);
       overflow: hidden;
       box-shadow:
-        0 10px 14px rgba(0, 0, 0, 0.26),
-        0 4px 0 rgba(255, 255, 255, 0.22) inset,
-        0 -10px 12px rgba(0, 0, 0, 0.25) inset;
+        0 10px 16px rgba(0, 0, 0, 0.28),
+        0 2px 0 rgba(255, 255, 255, 0.42) inset,
+        0 -10px 16px rgba(0, 0, 0, 0.24) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
       transition: transform 0.2s ease, opacity 0.14s ease, filter 0.2s ease, box-shadow 0.2s ease;
       will-change: transform, filter;
       cursor: grab;
@@ -247,29 +251,34 @@
 
     .tile::before {
       inset: 2px;
-      border-radius: calc(var(--tile-radius) - 3px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      opacity: 0.7;
+      border-radius: inherit;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.18) inset;
+      opacity: 0.82;
       z-index: 2;
     }
 
     .tile::after {
       inset: 5px 8px auto;
-      height: 34%;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0));
+      height: 40%;
+      border-radius: 60% 58% 46% 52% / 66% 70% 40% 42%;
+      background:
+        radial-gradient(75% 100% at 30% 20%, rgba(255,255,255,0.95), rgba(255,255,255,0.5) 40%, rgba(255,255,255,0) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0));
       z-index: 3;
       transform: translateY(0);
       transition: transform 220ms ease, opacity 220ms ease;
+      mix-blend-mode: screen;
     }
 
     .tile:hover {
       transform: translateY(-3px) scale(1.045);
       filter: saturate(1.15) brightness(1.08);
       box-shadow:
-        0 15px 20px rgba(0, 0, 0, 0.32),
-        0 5px 0 rgba(255, 255, 255, 0.27) inset,
-        0 -12px 14px rgba(0, 0, 0, 0.24) inset;
+        0 17px 26px rgba(0, 0, 0, 0.32),
+        0 5px 0 rgba(255, 255, 255, 0.35) inset,
+        0 -14px 16px rgba(0, 0, 0, 0.22) inset,
+        0 0 16px rgba(255, 255, 255, 0.2);
     }
 
     .tile:hover::after {
@@ -310,12 +319,42 @@
       transition: box-shadow 180ms ease, filter 180ms ease;
     }
 
-    .red    { background: radial-gradient(circle at 30% 24%, #ffafbf 0%, #ff6b85 32%, #eb2d58 68%, #b9153d 100%); }
-    .blue   { background: radial-gradient(circle at 30% 24%, #a6ebff 0%, #63c8ff 34%, #268de9 70%, #0c62b8 100%); }
-    .green  { background: radial-gradient(circle at 30% 24%, #c6ffd0 0%, #81e79a 34%, #34b660 70%, #1e7f42 100%); }
-    .yellow { background: radial-gradient(circle at 30% 24%, #fff8b6 0%, #ffe979 34%, #ffbf31 70%, #df8e0c 100%); }
-    .purple { background: radial-gradient(circle at 30% 24%, #efc4ff 0%, #d594ff 34%, #a95dea 70%, #7d31be 100%); }
-    .orange { background: radial-gradient(circle at 30% 24%, #ffe2bc 0%, #ffc37d 34%, #ff9342 70%, #dc5d14 100%); }
+    .red {
+      --tile-bg:
+        linear-gradient(145deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 28%),
+        radial-gradient(circle at 30% 20%, #ffd0da 0%, #ff7d98 34%, #ef2e5e 68%, #ae1239 100%);
+      border-radius: 34% 44% 39% 35% / 33% 34% 46% 40%;
+    }
+    .blue {
+      --tile-bg:
+        linear-gradient(150deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0) 32%),
+        radial-gradient(circle at 26% 20%, #d2f5ff 0%, #65cdff 34%, #1884ef 70%, #0b4ea4 100%);
+      border-radius: 50%;
+    }
+    .green {
+      --tile-bg:
+        linear-gradient(145deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 36%),
+        radial-gradient(circle at 28% 18%, #d9ffe0 0%, #82ef9f 34%, #2db85e 70%, #196f3b 100%);
+      border-radius: 42% 37% 44% 39% / 36% 43% 38% 44%;
+    }
+    .yellow {
+      --tile-bg:
+        linear-gradient(145deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 30%),
+        radial-gradient(circle at 30% 20%, #fffdd0 0%, #ffe87a 36%, #ffba1f 70%, #cb7700 100%);
+      border-radius: 36% 36% 43% 42% / 40% 40% 46% 46%;
+    }
+    .purple {
+      --tile-bg:
+        linear-gradient(145deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 30%),
+        radial-gradient(circle at 28% 20%, #f6d6ff 0%, #da9bff 36%, #a557ec 70%, #6f2aa8 100%);
+      border-radius: 44% 34% 46% 36% / 34% 44% 36% 46%;
+    }
+    .orange {
+      --tile-bg:
+        linear-gradient(145deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 30%),
+        radial-gradient(circle at 26% 18%, #ffe8c8 0%, #ffc57d 34%, #ff8d30 70%, #be4700 100%);
+      border-radius: 45% 36% 42% 34% / 44% 38% 42% 36%;
+    }
 
     .hint {
       text-align: center;
@@ -458,9 +497,17 @@
 
     @keyframes match-bounce {
       0% { transform: scale(1); filter: brightness(1); }
-      32% { transform: scale(1.18); filter: brightness(1.22); }
-      64% { transform: scale(0.95); filter: brightness(1.08); }
-      100% { transform: scale(1); filter: brightness(1); }
+      26% { transform: scale(1.26); filter: brightness(1.24); }
+      64% { transform: scale(0.84); filter: brightness(1.08); }
+      86% { transform: scale(1.08); filter: brightness(1.12); }
+      100% { transform: scale(0); filter: brightness(1); opacity: 0.2; }
+    }
+
+    @keyframes swap-bounce {
+      0% { transform: translate(var(--from-x), var(--from-y)) scale(0.92); }
+      58% { transform: translate(0, 0) scale(1.12); }
+      78% { transform: translate(0, 0) scale(0.96); }
+      100% { transform: translate(0, 0) scale(1); }
     }
 
     @keyframes board-shake {
@@ -779,12 +826,16 @@
               MOVE_ANIM_MIN,
               Math.min(MOVE_ANIM_MAX, Math.round(distance * MOVE_ANIM_PER_PIXEL))
             );
+            el.style.setProperty("--from-x", `${dx}px`);
+            el.style.setProperty("--from-y", `${dy}px`);
             el.animate(
               [
-                { transform: `translate(${dx}px, ${dy}px)` },
-                { transform: "translate(0, 0)" }
+                { transform: `translate(${dx}px, ${dy}px) scale(0.92)` },
+                { transform: "translate(0, 0) scale(1.12)", offset: 0.58 },
+                { transform: "translate(0, 0) scale(0.96)", offset: 0.78 },
+                { transform: "translate(0, 0) scale(1)" }
               ],
-              { duration, easing: "cubic-bezier(0.22, 0.9, 0.2, 1)" }
+              { duration, easing: "cubic-bezier(0.25, 0.88, 0.24, 1.08)" }
             );
           }
 
