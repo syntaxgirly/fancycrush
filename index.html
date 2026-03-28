@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Candy Crush</title>
+  <style>
+    :root {
+      --size: 56px;
+      --gap: 6px;
+      --board-bg: #222a4f;
+      --tile-bg: #10152e;
+      --text: #f4f5ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at top, #3a4a98 0%, #1f254f 45%, #121635 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .game {
+      width: min(100%, 560px);
+      background: rgba(8, 12, 35, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0.2px;
+    }
+
+    .score {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, var(--size));
+      grid-template-rows: repeat(8, var(--size));
+      gap: var(--gap);
+      width: max-content;
+      margin-inline: auto;
+      background: var(--board-bg);
+      border-radius: 14px;
+      padding: 10px;
+      user-select: none;
+    }
+
+    .tile {
+      width: var(--size);
+      height: var(--size);
+      border-radius: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      background: var(--tile-bg);
+      box-shadow: inset 0 6px 10px rgba(255, 255, 255, 0.12),
+                  inset 0 -8px 12px rgba(0, 0, 0, 0.18);
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    .tile:active { transform: scale(0.94); }
+    .tile.dragging { opacity: 0.55; }
+
+    .red    { background: linear-gradient(145deg, #ff5a6b, #d92744); }
+    .blue   { background: linear-gradient(145deg, #4ab4ff, #197fd9); }
+    .green  { background: linear-gradient(145deg, #5fd87a, #2da955); }
+    .yellow { background: linear-gradient(145deg, #ffe56a, #f2b51b); }
+    .purple { background: linear-gradient(145deg, #cc83ff, #8c46d8); }
+    .orange { background: linear-gradient(145deg, #ffb971, #ee7b24); }
+
+    .hint {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <main class="game">
+    <div class="topbar">
+      <h1>Mini Candy Crush</h1>
+      <div class="score">Score: <span id="score">0</span></div>
+    </div>
+
+    <div id="board" class="board" aria-label="Candy board"></div>
+    <p class="hint">Drag one tile onto a neighbor to swap.</p>
+  </main>
+
+  <script>
+    (() => {
+      const SIZE = 8;
+      const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
+      const boardEl = document.getElementById("board");
+      const scoreEl = document.getElementById("score");
+
+      const board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+      let score = 0;
+      let dragged = null;
+      let busy = false;
+
+      const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      function updateScore(points) {
+        score += points;
+        scoreEl.textContent = score;
+      }
+      function isAdjacent(a, b) {
+        return Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
+      }
+
+      function swap(a, b) {
+        [board[a.r][a.c], board[b.r][b.c]] = [board[b.r][b.c], board[a.r][a.c]];
+      }
+
+      function findMatches() {
+        const matched = new Set();
+
+        // Horizontal runs
+        for (let r = 0; r < SIZE; r++) {
+          let runStart = 0;
+          for (let c = 1; c <= SIZE; c++) {
+            const same = c < SIZE && board[r][c] && board[r][c] === board[r][runStart];
+            if (!same) {
+              const runLen = c - runStart;
+              if (board[r][runStart] && runLen >= 3) {
+                for (let i = runStart; i < c; i++) matched.add(`${r},${i}`);
+              }
+              runStart = c;
+            }
+          }
+        }
+
+        // Vertical runs
+        for (let c = 0; c < SIZE; c++) {
+          let runStart = 0;
+          for (let r = 1; r <= SIZE; r++) {
+            const same = r < SIZE && board[r][c] && board[r][c] === board[runStart][c];
+            if (!same) {
+              const runLen = r - runStart;
+              if (board[runStart][c] && runLen >= 3) {
+                for (let i = runStart; i < r; i++) matched.add(`${i},${c}`);
+              }
+              runStart = r;
+            }
+          }
+        }
+
+        return matched;
+      }
+
+      function removeMatches(matched) {
+        for (const key of matched) {
+          const [r, c] = key.split(",").map(Number);
+          board[r][c] = null;
+        }
+        if (matched.size > 0) updateScore(matched.size * 10);
+      }
+
+      function collapseColumns() {
+        for (let c = 0; c < SIZE; c++) {
+          const nonNull = [];
+          for (let r = SIZE - 1; r >= 0; r--) {
+            if (board[r][c] !== null) nonNull.push(board[r][c]);
+          }
+
+          for (let r = SIZE - 1, i = 0; r >= 0; r--, i++) {
+            board[r][c] = i < nonNull.length ? nonNull[i] : randomColor();
+          }
+        }
+      }
+
+      function render() {
+        boardEl.innerHTML = "";
+
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            const tile = document.createElement("div");
+            tile.className = `tile ${board[r][c]}`;
+            tile.draggable = true;
+            tile.dataset.r = r;
+            tile.dataset.c = c;
+
+            tile.addEventListener("dragstart", onDragStart);
+            tile.addEventListener("dragend", onDragEnd);
+            tile.addEventListener("dragover", (e) => e.preventDefault());
+            tile.addEventListener("drop", onDrop);
+
+            boardEl.appendChild(tile);
+          }
+        }
+      }
+
+      async function resolveBoard() {
+        let matched = findMatches();
+
+        while (matched.size > 0) {
+          removeMatches(matched);
+          render();
+          await wait(120);
+          collapseColumns();
+          render();
+          await wait(120);
+          matched = findMatches();
+        }
+      }
+
+      async function attemptSwap(from, to) {
+        if (!isAdjacent(from, to)) return;
+
+        swap(from, to);
+        render();
+
+        const matched = findMatches();
+        if (matched.size === 0) {
+          await wait(110);
+          swap(from, to);
+          render();
+          return;
+        }
+
+        await resolveBoard();
+      }
+
+      function onDragStart(e) {
+        if (busy) {
+          e.preventDefault();
+          return;
+        }
+        dragged = {
+          r: Number(e.target.dataset.r),
+          c: Number(e.target.dataset.c)
+        };
+        e.target.classList.add("dragging");
+      }
+
+      function onDragEnd(e) {
+        e.target.classList.remove("dragging");
+      }
+
+      async function onDrop(e) {
+        e.preventDefault();
+        if (!dragged || busy) return;
+
+        const target = {
+          r: Number(e.currentTarget.dataset.r),
+          c: Number(e.currentTarget.dataset.c)
+        };
+
+        busy = true;
+        await attemptSwap(dragged, target);
+        dragged = null;
+        busy = false;
+      }
+
+      async function init() {
+        for (let r = 0; r < SIZE; r++) {
+          for (let c = 0; c < SIZE; c++) {
+            board[r][c] = randomColor();
+          }
+        }
+
+        render();
+        await resolveBoard(); // remove accidental starting matches
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
