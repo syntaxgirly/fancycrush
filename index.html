@@ -8,8 +8,9 @@
     :root {
       --size: clamp(38px, 10.5vw, 56px);
       --gap: clamp(4px, 1.1vw, 6px);
-      --board-bg: rgba(17, 27, 64, 0.82);
+      --board-bg: rgba(25, 35, 82, 0.82);
       --tile-bg: #10152e;
+      --tile-radius: clamp(12px, 3.2vw, 18px);
       --text: #f4f5ff;
       --board-pad: clamp(8px, 2vw, 10px);
     }
@@ -134,69 +135,95 @@
       width: max-content;
       margin-inline: auto;
       background: var(--board-bg);
-      border-radius: 16px;
+      border-radius: 22px;
       padding: var(--board-pad);
       user-select: none;
       position: relative;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -10px 24px rgba(0,0,0,0.22);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -14px 28px rgba(0,0,0,0.3), 0 16px 26px rgba(0,0,0,0.25);
     }
 
     .tile {
       position: relative;
       width: var(--size);
       height: var(--size);
-      border-radius: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.28);
+      border-radius: var(--tile-radius);
+      border: 1px solid rgba(255, 255, 255, 0.36);
       background: var(--tile-bg);
       overflow: hidden;
       box-shadow:
-        0 7px 10px rgba(0, 0, 0, 0.22),
-        inset 0 7px 10px rgba(255, 255, 255, 0.2),
-        inset 0 -9px 10px rgba(0, 0, 0, 0.22);
-      transition: transform 0.16s ease, opacity 0.12s ease, filter 0.16s ease, box-shadow 0.16s ease;
-      will-change: transform;
+        0 10px 14px rgba(0, 0, 0, 0.26),
+        0 4px 0 rgba(255, 255, 255, 0.22) inset,
+        0 -10px 12px rgba(0, 0, 0, 0.25) inset;
+      transition: transform 0.18s ease, opacity 0.14s ease, filter 0.18s ease, box-shadow 0.18s ease;
+      will-change: transform, filter;
       cursor: grab;
       touch-action: manipulation;
+      isolation: isolate;
     }
 
+    .tile::before,
     .tile::after {
       content: "";
       position: absolute;
-      inset: 5px 8px auto;
-      height: 34%;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0));
       pointer-events: none;
     }
 
+    .tile::before {
+      inset: 2px;
+      border-radius: calc(var(--tile-radius) - 3px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      opacity: 0.7;
+      z-index: 2;
+    }
+
+    .tile::after {
+      inset: 5px 8px auto;
+      height: 34%;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0));
+      z-index: 3;
+      transform: translateY(0);
+      transition: transform 220ms ease, opacity 220ms ease;
+    }
+
     .tile:hover {
-      transform: translateY(-2px) scale(1.035);
-      filter: saturate(1.08) brightness(1.05);
+      transform: translateY(-3px) scale(1.045);
+      filter: saturate(1.15) brightness(1.08);
       box-shadow:
-        0 11px 18px rgba(0, 0, 0, 0.3),
-        inset 0 7px 10px rgba(255, 255, 255, 0.24),
-        inset 0 -10px 12px rgba(0, 0, 0, 0.22);
+        0 15px 20px rgba(0, 0, 0, 0.32),
+        0 5px 0 rgba(255, 255, 255, 0.27) inset,
+        0 -12px 14px rgba(0, 0, 0, 0.24) inset;
+    }
+
+    .tile:hover::after {
+      transform: translateY(-1px);
+      opacity: 0.9;
     }
 
     .tile:active {
-      transform: scale(0.94);
+      transform: scale(0.92);
+      filter: saturate(1.2);
       cursor: grabbing;
     }
 
-    .tile.dragging { opacity: 0.55; }
+    .tile.dragging {
+      opacity: 0.58;
+      animation: tile-bob 420ms ease-in-out infinite alternate;
+    }
     .tile.selected {
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 11px 18px rgba(0, 0, 0, 0.3);
+      transform: translateY(-3px) scale(1.07);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 14px 20px rgba(0, 0, 0, 0.34);
+      animation: tile-pulse 660ms ease-in-out infinite alternate;
     }
 
-    .red    { background: linear-gradient(145deg, #ff5a6b, #d92744); }
-    .blue   { background: linear-gradient(145deg, #4ab4ff, #197fd9); }
-    .green  { background: linear-gradient(145deg, #5fd87a, #2da955); }
-    .yellow { background: linear-gradient(145deg, #ffe56a, #f2b51b); }
-    .purple { background: linear-gradient(145deg, #cc83ff, #8c46d8); }
-    .orange { background: linear-gradient(145deg, #ffb971, #ee7b24); }
+    .red    { background: radial-gradient(circle at 30% 24%, #ffafbf 0%, #ff6b85 32%, #eb2d58 68%, #b9153d 100%); }
+    .blue   { background: radial-gradient(circle at 30% 24%, #a6ebff 0%, #63c8ff 34%, #268de9 70%, #0c62b8 100%); }
+    .green  { background: radial-gradient(circle at 30% 24%, #c6ffd0 0%, #81e79a 34%, #34b660 70%, #1e7f42 100%); }
+    .yellow { background: radial-gradient(circle at 30% 24%, #fff8b6 0%, #ffe979 34%, #ffbf31 70%, #df8e0c 100%); }
+    .purple { background: radial-gradient(circle at 30% 24%, #efc4ff 0%, #d594ff 34%, #a95dea 70%, #7d31be 100%); }
+    .orange { background: radial-gradient(circle at 30% 24%, #ffe2bc 0%, #ffc37d 34%, #ff9342 70%, #dc5d14 100%); }
 
     .hint {
       margin-top: 14px;
@@ -218,7 +245,7 @@
       place-items: center;
       text-align: center;
       padding: 20px;
-      border-radius: 16px;
+      border-radius: 22px;
       z-index: 5;
       background: linear-gradient(165deg, rgba(15, 22, 59, 0.92), rgba(14, 12, 35, 0.94));
       border: 1px solid rgba(255, 255, 255, 0.16);
@@ -285,6 +312,16 @@
       background: radial-gradient(circle at center, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 30%, rgba(255,255,255,0) 70%);
       animation: burst 520ms cubic-bezier(0.2, 0.75, 0.24, 1) forwards;
       mix-blend-mode: screen;
+    }
+
+    @keyframes tile-pulse {
+      0% { transform: translateY(-2px) scale(1.045); }
+      100% { transform: translateY(-4px) scale(1.07); }
+    }
+
+    @keyframes tile-bob {
+      0% { transform: translateY(-1px) rotate(-0.5deg); }
+      100% { transform: translateY(1px) rotate(0.5deg); }
     }
 
     @keyframes burst {
